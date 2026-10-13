@@ -73,5 +73,5 @@ semantic versioning.
 - Full `pytest` suite mirroring the package structure, plus doctests in every
   public function.
 
-[1.1.0]: https://github.com/TellurisLabs/atmoflux/releases/tag/v1.1.0
-[1.0.0]: https://github.com/TellurisLabs/atmoflux/releases/tag/v1.0.0
+[1.1.0]: https://github.com/JustinGeoSci/atmoflux/releases/tag/v1.1.0
+[1.0.0]: https://github.com/JustinGeoSci/atmoflux/releases/tag/v1.0.0

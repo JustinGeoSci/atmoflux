@@ -9,8 +9,8 @@ turbulent, hydrological, aerosol, and energy balance applications.
 
 # Package metadata
 __version__ = "1.1.0"
-__author__ = "Telluris Labs"
-__email__ = "info@tellurislabs.io"
+__author__ = "JustinGeoSci"
+__email__ = "contact@justingeosci.dev"
 __license__ = "MIT"
 __description__ = "Custom tools for climate data processing and analysis"
 

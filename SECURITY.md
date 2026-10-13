@@ -6,13 +6,11 @@ Only the latest released version is actively supported with security updates. Al
 
 ## Reporting a Vulnerability
 
-We take the security of our project seriously. If you discover a vulnerability in this software, we appreciate your help in disclosing it to us in a responsible manner.
-
-We ask that you do not publicly disclose the vulnerability until it has been addressed by us.
+The security of this project is taken seriously. If you discover a security vulnerability, please report it privately so that it can be investigated and addressed before public disclosure.
 
 ### How to Report
 
-Please report vulnerabilities by emailing `security@tellurislabs.io`.
+Please report vulnerabilities by emailing `contact@justingeosci.dev`.
 
 Please include the following details in your email:
 
@@ -21,4 +19,4 @@ Please include the following details in your email:
 *   The affected version(s) of the project.
 *   Any potential impact or exploitability details.
 
-We will acknowledge receipt of your vulnerability report and work to address the issue as quickly as possible.
+Reports will be acknowledged, and efforts to investigate and address confirmed vulnerabilities will begin as soon as reasonably possible. Please allow time for investigation and remediation before publicly disclosing the vulnerability.

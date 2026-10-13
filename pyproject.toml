@@ -1,19 +1,25 @@
 [project]
 name = "atmoflux"
 dynamic = ["version"]
-description = "Atmospheric and energy flux analysis library by Telluris Labs"
+description = "Atmospheric and energy flux analysis library"
 readme = "README.md"
 requires-python = ">=3.9"
-dependencies = [
-    "numpy>=1.26"
-]
-authors = [
-    { name = "Telluris Labs", email = "info@tellurislabs.io" }
-]
+dependencies = ["numpy>=1.26"]
+authors = [{ name = "JustinGeoSci", email = "contact@justingeosci.dev" }]
 license = "MIT"
 license-files = ["LICENSE"]
-keywords = ["atmospheric science","climate science","meteorology","surface energy balance","land-atmosphere exchange",
-    "energy fluxes", "radiative fluxes","turbulent fluxes","hydrological fluxes","boundary layer","urban climate"
+keywords = [
+    "atmospheric science",
+    "climate science",
+    "meteorology",
+    "surface energy balance",
+    "land-atmosphere exchange",
+    "energy fluxes",
+    "radiative fluxes",
+    "turbulent fluxes",
+    "hydrological fluxes",
+    "boundary layer",
+    "urban climate",
 ]
 
 classifiers = [
@@ -22,16 +28,16 @@ classifiers = [
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Atmospheric Science",
-    "Topic :: Scientific/Engineering :: Hydrology"   
+    "Topic :: Scientific/Engineering :: Hydrology",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest"]
 
 [project.urls]
-Homepage = "https://tellurislabs.io"
-Source = "https://github.com/Telluris-Labs/atmoflux"
-"Bug Tracker" = "https://github.com/Telluris-Labs/atmoflux/issues"
+Homepage = "https://justingeosci.dev/atmoflux/"
+Source = "https://github.com/JustinGeoSci/atmoflux"
+"Bug Tracker" = "https://github.com/JustinGeoSci/atmoflux/issues"
 Citation = "https://doi.org/10.5281/zenodo.20470203"
 
 [build-system]
@@ -44,4 +50,4 @@ include = ["atmoflux*"]
 exclude = ["tests*"]
 
 [tool.setuptools.dynamic]
-version = {attr = "atmoflux.__version__"}
+version = { attr = "atmoflux.__version__" }

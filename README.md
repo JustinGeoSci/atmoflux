@@ -40,7 +40,7 @@ Clone the repository and install from the project root. Use an editable
 install if you intend to modify the code:
 
 ```bash
-git clone https://github.com/Telluris-Labs/atmoflux.git
+git clone https://github.com/JustinGeoSci/atmoflux.git
 cd atmoflux
 
 pip install .       # regular installation
