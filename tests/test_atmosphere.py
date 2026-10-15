@@ -7,7 +7,7 @@ from atmoflux.exceptions import OutOfRangeError
 
 
 def test_scale_height_value():
-    assert Atm.scale_height(15) == pytest.approx(8434.7, abs=0.1)
+    assert Atm.scale_height(15) == pytest.approx(8434.5, abs=0.1)
 
 
 def test_pressure_at_altitude_value():

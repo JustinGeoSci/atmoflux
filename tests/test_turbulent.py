@@ -77,3 +77,41 @@ def test_aerodynamic_resistance_bad_wind():
 def test_aerodynamic_resistance_bad_height():
     with pytest.raises(OutOfRangeError):
         Tu.aerodynamic_resistance(3.0, 0.01, 0.03)
+
+
+def test_moist_air_density_value():
+    assert Tu.moist_air_density(15, 101.325, 0.01) == pytest.approx(1.2176, abs=1e-4)
+
+
+def test_moist_air_density_dry_limit_matches_air_density():
+    # With no water vapor, moist air density reduces to dry air density.
+    assert Tu.moist_air_density(15, 101.325, 0.0) == pytest.approx(
+        Tu.air_density(15, 101.325)
+    )
+
+
+def test_moist_air_lighter_than_dry_air():
+    assert Tu.moist_air_density(25, 101.325, 0.015) < Tu.air_density(25, 101.325)
+
+
+def test_moist_air_density_kelvin_input():
+    assert Tu.moist_air_density(288.15, 101.325, 0.01, unit="K") == pytest.approx(
+        Tu.moist_air_density(15, 101.325, 0.01)
+    )
+
+
+def test_moist_air_density_bad_pressure():
+    with pytest.raises(OutOfRangeError):
+        Tu.moist_air_density(15, 0.0, 0.01)
+
+
+def test_moist_air_density_negative_mixing_ratio():
+    with pytest.raises(OutOfRangeError):
+        Tu.moist_air_density(15, 101.325, -0.001)
+
+
+def test_moist_air_density_array():
+    # Density falls as moisture rises
+    out = Tu.moist_air_density(15, 101.325, np.array([0.0, 0.01, 0.02]))
+    assert out.shape == (3,)
+    assert np.all(np.diff(out) < 0) 

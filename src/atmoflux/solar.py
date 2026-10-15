@@ -18,6 +18,7 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import SOLAR_CONSTANT, SOLAR_DECLINATION_MAX, ANGSTROM_A, ANGSTROM_B
+from .core import FloatArray, IntArray
 from .exceptions import OutOfRangeError
 
 
@@ -53,7 +54,7 @@ def day_of_year(year: int, month: int, day: int) -> int:
         raise OutOfRangeError(f"Invalid calendar date: {exc}") from exc
 
 
-def solar_declination(doy: int) -> float:
+def solar_declination(doy: IntArray) -> FloatArray:
     """
     Solar declination angle for a given day of year.
 
@@ -95,7 +96,7 @@ def solar_declination(doy: int) -> float:
     return delta
 
 
-def hour_angle(solar_time: float) -> float:
+def hour_angle(solar_time: FloatArray) -> FloatArray:
     """
     Solar hour angle from local solar time.
 
@@ -134,7 +135,7 @@ def hour_angle(solar_time: float) -> float:
     return h
 
 
-def solar_zenith_angle(latitude: float, declination: float, hour_angle: float) -> float:
+def solar_zenith_angle(latitude: FloatArray, declination: FloatArray, hour_angle: FloatArray) -> FloatArray:
     """
     Solar zenith angle from latitude, declination, and hour angle.
 
@@ -172,7 +173,7 @@ def solar_zenith_angle(latitude: float, declination: float, hour_angle: float) -
     return theta_z
 
 
-def solar_elevation(latitude: float, declination: float, hour_angle: float) -> float:
+def solar_elevation(latitude: FloatArray, declination: FloatArray, hour_angle: FloatArray) -> FloatArray:
     """
     Solar elevation (altitude) angle above the horizon.
 
@@ -201,7 +202,7 @@ def solar_elevation(latitude: float, declination: float, hour_angle: float) -> f
     return alpha
 
 
-def sunset_hour_angle(latitude: float, declination: float) -> float:
+def sunset_hour_angle(latitude: FloatArray, declination: FloatArray) -> FloatArray:
     """
     Sunset hour angle for a given latitude and declination.
 
@@ -233,7 +234,7 @@ def sunset_hour_angle(latitude: float, declination: float) -> float:
     return hs
 
 
-def daylight_hours(latitude: float, declination: float) -> float:
+def daylight_hours(latitude: FloatArray, declination: FloatArray) -> FloatArray:
     """
     Length of daylight for a given latitude and declination.
 
@@ -261,7 +262,7 @@ def daylight_hours(latitude: float, declination: float) -> float:
     return n
 
 
-def extraterrestrial_radiation(latitude: float, doy: int) -> float:
+def extraterrestrial_radiation(latitude: FloatArray, doy: IntArray) -> FloatArray:
     """
     Daily extraterrestrial (top-of-atmosphere) solar radiation.
 
@@ -316,12 +317,12 @@ def extraterrestrial_radiation(latitude: float, doy: int) -> float:
 
 
 def clear_sky_radiation(
-    extraterrestrial: float,
-    sunshine_hours: float,
-    daylight: float,
-    a: float = ANGSTROM_A,
-    b: float = ANGSTROM_B,
-) -> float:
+    extraterrestrial: FloatArray,
+    sunshine_hours: FloatArray,
+    daylight: FloatArray,
+    a: FloatArray = ANGSTROM_A,
+    b: FloatArray = ANGSTROM_B,
+) -> FloatArray:
     """
     Incoming shortwave radiation from the Angstrom-Prescott relation.
 

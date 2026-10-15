@@ -15,18 +15,19 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import G, CP_AIR, KARMAN
+from .core import FloatArray
 from .exceptions import OutOfRangeError
 from .temperature import convert_temperature
 
 
 def bulk_richardson_number(
-    temp_lower: float,
-    temp_upper: float,
-    wind_upper: float,
-    height_lower: float,
-    height_upper: float,
+    temp_lower: FloatArray,
+    temp_upper: FloatArray,
+    wind_upper: FloatArray,
+    height_lower: FloatArray,
+    height_upper: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Bulk Richardson number between two heights.
 
@@ -82,12 +83,12 @@ def bulk_richardson_number(
 
 
 def obukhov_length(
-    friction_velocity: float,
-    temp: float,
-    sensible_heat_flux: float,
-    density: float,
+    friction_velocity: FloatArray,
+    temp: FloatArray,
+    sensible_heat_flux: FloatArray,
+    density: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Monin-Obukhov length from friction velocity and sensible heat flux.
 
@@ -140,7 +141,7 @@ def obukhov_length(
     return l
 
 
-def stability_parameter(height: float, obukhov_length: float) -> float:
+def stability_parameter(height: FloatArray, obukhov_length: FloatArray) -> FloatArray:
     """
     Monin-Obukhov stability parameter zeta = z / L.
 
@@ -171,7 +172,7 @@ def stability_parameter(height: float, obukhov_length: float) -> float:
     return zeta
 
 
-def psi_momentum(zeta: float) -> float:
+def psi_momentum(zeta: FloatArray) -> FloatArray:
     """
     Integrated stability correction function for momentum.
 
@@ -198,16 +199,16 @@ def psi_momentum(zeta: float) -> float:
     >>> print(round(psi_momentum(-0.1), 4))
     0.2836
     """
-    zeta = np.asarray(zeta, dtype=float)
-    unstable = zeta < 0
-    x = (1 - 16 * np.where(unstable, zeta, 0.0)) ** 0.25
+    z = np.asarray(zeta, dtype=float)
+    unstable = z < 0
+    x = (1 - 16 * np.where(unstable, z, 0.0)) ** 0.25
     psi_unstable = (
         2 * np.log((1 + x) / 2)
         + np.log((1 + x**2) / 2)
         - 2 * np.arctan(x)
         + np.pi / 2
     )
-    psi_stable = -5 * zeta
+    psi_stable = -5 * z
     result = np.where(unstable, psi_unstable, psi_stable)
 
     if result.ndim == 0:
@@ -216,7 +217,7 @@ def psi_momentum(zeta: float) -> float:
     return result
 
 
-def psi_heat(zeta: float) -> float:
+def psi_heat(zeta: FloatArray) -> FloatArray:
     """
     Integrated stability correction function for heat.
 
@@ -243,11 +244,11 @@ def psi_heat(zeta: float) -> float:
     >>> print(round(psi_heat(-0.1), 4))
     0.5343
     """
-    zeta = np.asarray(zeta, dtype=float)
-    unstable = zeta < 0
-    y = (1 - 16 * np.where(unstable, zeta, 0.0)) ** 0.5
+    z = np.asarray(zeta, dtype=float)
+    unstable = z < 0
+    y = (1 - 16 * np.where(unstable, z, 0.0)) ** 0.5
     psi_unstable = 2 * np.log((1 + y) / 2)
-    psi_stable = -5 * zeta
+    psi_stable = -5 * z
     result = np.where(unstable, psi_unstable, psi_stable)
 
     if result.ndim == 0:

@@ -14,13 +14,14 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import STEFAN_BOLTZMANN
+from .core import FloatArray
 from .exceptions import OutOfRangeError
 from .temperature import convert_temperature
 
 
 def blackbody_radiation(
-    temp: float, emissivity: float = 1.0, unit: str = "K"
-) -> float:
+    temp: FloatArray, emissivity: FloatArray = 1.0, unit: str = "K"
+) -> FloatArray:
     """
     Radiant emittance of a surface from the Stefan-Boltzmann law.
 
@@ -63,7 +64,7 @@ def blackbody_radiation(
     return l
 
 
-def net_shortwave(sw_down: float, albedo: float) -> float:
+def net_shortwave(sw_down: FloatArray, albedo: FloatArray) -> FloatArray:
     """
     Net shortwave radiation absorbed at a surface.
 
@@ -99,8 +100,8 @@ def net_shortwave(sw_down: float, albedo: float) -> float:
 
 
 def net_longwave(
-    lw_down: float, temp_surface: float, emissivity: float = 1.0, unit: str = "K"
-) -> float:
+    lw_down: FloatArray, temp_surface: FloatArray, emissivity: FloatArray = 1.0, unit: str = "K"
+) -> FloatArray:
     """
     Net longwave radiation at a surface (positive into the surface).
 
@@ -145,13 +146,13 @@ def net_longwave(
 
 
 def net_radiation(
-    sw_down: float,
-    lw_down: float,
-    albedo: float,
-    temp_surface: float,
-    emissivity: float = 1.0,
+    sw_down: FloatArray,
+    lw_down: FloatArray,
+    albedo: FloatArray,
+    temp_surface: FloatArray,
+    emissivity: FloatArray = 1.0,
     unit: str = "K",
-) -> float:
+) -> FloatArray:
     """
     Net all-wave radiation at a surface.
 
@@ -194,7 +195,7 @@ def net_radiation(
     return rn
 
 
-def clear_sky_emissivity(temp_air: float, vapor_pressure: float, unit: str = "C") -> float:
+def clear_sky_emissivity(temp_air: FloatArray, vapor_pressure: FloatArray, unit: str = "C") -> FloatArray:
     """
     Clear-sky atmospheric emissivity using Brutsaert's relation.
 
@@ -242,11 +243,11 @@ def clear_sky_emissivity(temp_air: float, vapor_pressure: float, unit: str = "C"
 
 
 def net_longwave_cloud(
-    temp_air: float,
-    vapor_pressure: float,
-    cloud_fraction: float,
+    temp_air: FloatArray,
+    vapor_pressure: FloatArray,
+    cloud_fraction: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Net longwave radiation at the surface with a cloud adjustment (FAO-56 style).
 
@@ -299,7 +300,7 @@ def net_longwave_cloud(
     return rnl
 
 
-def diffuse_fraction(clearness_index: float) -> float:
+def diffuse_fraction(clearness_index: FloatArray) -> FloatArray:
     """
     Diffuse fraction of global shortwave radiation from the clearness index.
 

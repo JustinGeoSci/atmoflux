@@ -13,13 +13,46 @@ from __future__ import annotations
 import numpy as np
 
 # imports from within atmoflux
-from .constants import CP_AIR, R_AIR, P0, STEFAN_BOLTZMANN, G, LV
+from .constants import (
+    CP_AIR, R_AIR, P0, STEFAN_BOLTZMANN, G, LV,
+    SVP_A, SVP_B, SVP_C,
+    SVP_ICE_A, SVP_ICE_B, SVP_ICE_C,
+    SVP_A_ALDUCHOV, SVP_B_ALDUCHOV, SVP_C_ALDUCHOV,
+    SVP_ICE_A_ALDUCHOV, SVP_ICE_B_ALDUCHOV, SVP_ICE_C_ALDUCHOV,
+)
+from .core import FloatArray
 from .exceptions import InvalidUnitError, OutOfRangeError, ValidationError
 
 _VALID_UNITS = {"C", "F", "K"}
 
+# Magnus-form saturation vapor pressure coefficients (A [kPa], B, C [°C]) by
+# method, for liquid water and for ice.
+_SVP_COEFFICIENTS = {
+    "tetens": (SVP_A, SVP_B, SVP_C),
+    "alduchov": (SVP_A_ALDUCHOV, SVP_B_ALDUCHOV, SVP_C_ALDUCHOV),
+}
+_SVP_ICE_COEFFICIENTS = {
+    "tetens": (SVP_ICE_A, SVP_ICE_B, SVP_ICE_C),
+    "alduchov": (SVP_ICE_A_ALDUCHOV, SVP_ICE_B_ALDUCHOV, SVP_ICE_C_ALDUCHOV),
+}
 
-def convert_temperature(temp: float, input_unit: str, output_unit: str) -> float:
+
+def _svp_coefficients(method: str, ice: bool = False) -> tuple[float, float, float]:
+    """Return Magnus-form (A, B, C) coefficients for a saturation vapor pressure method."""
+    table = _SVP_ICE_COEFFICIENTS if ice else _SVP_COEFFICIENTS
+
+    if not isinstance(method, str) or method.lower() not in table:
+        raise ValidationError(
+            f"Saturation vapor pressure method must be one of {sorted(table)}; "
+            f"got {method!r}."
+        )
+
+    coefficients = table[method.lower()]
+
+    return coefficients
+
+
+def convert_temperature(temp: FloatArray, input_unit: str, output_unit: str) -> FloatArray:
     """
     Convert temperature between Celsius, Fahrenheit, and Kelvin.
     
@@ -92,35 +125,42 @@ def convert_temperature(temp: float, input_unit: str, output_unit: str) -> float
             return (temp - 273.15) * 9 / 5 + 32
         
 
-def dewpoint_temperature(temp: float, rh: float, unit: str ="C") -> float:
+def dewpoint_temperature(
+    temp: FloatArray, rh: FloatArray, unit: str = "C", method: str = "tetens"
+) -> FloatArray:
     """
     Calculate dew point temperature from temperature and relative humidity.
-    
-    Uses the Magnus formula, which is accurate for normal atmospheric conditions.
-    
+
+    Defaults to the Magnus formula, which is accurate for normal atmospheric conditions.
+    User switch to the Alduchov & Eskridge formula, which is more accurate at extreme values.
+
     Parameters
     ----------
     temp : Air temperature.
     rh : Relative humidity (%).
     unit : Unit of input/output temperature: "C", "F", or "K" (default is "C").
-    
+    method : Magnus coefficient set: "tetens" (default) or "alduchov".
+
     Returns
     -------
     Dew point temperature in the same unit as input.
-    
+
     Raises
     ------
     OutOfRangeError
         If rh is not in the interval (0, 100].
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
 
     Notes
     -----
-    Uses the Magnus-Tetens approximation:
+    Uses the Magnus approximation:
     Td = (b * alpha) / (a - alpha)
     where alpha = ln(RH/100) + (a*T)/(b+T)
-    Constants: a = 17.27, b = 237.3°C
+    Constants: a = 17.27, b = 237.3°C (Tetens) or
+    a = 17.625, b = 243.04°C (Alduchov & Eskridge).
 
     Valid for:
     - Temperature range: -40°C to 50°C
@@ -132,22 +172,23 @@ def dewpoint_temperature(temp: float, rh: float, unit: str ="C") -> float:
     18.44
     >>> print(round(dewpoint_temperature(86, 50, unit="F"), 2))
     65.19
+    >>> print(round(dewpoint_temperature(30, 50, method="alduchov"), 2))
+    18.45
     """
     # Validate relative humidity
     if np.any(rh <= 0) or np.any(rh > 100):
         raise OutOfRangeError("Relative humidity must be between 0 and 100%")
-    
+
+    # Magnus formula constants
+    _, a, b = _svp_coefficients(method)
+
     # Convert temperature to Celsius for calculation
     unit = unit.upper()
     if unit != "C":
         temp_C = convert_temperature(temp, unit, "C")
     else:
         temp_C = temp
-    
-    # Magnus formula constants
-    a = 17.27
-    b = 237.3
-    
+
     # Calculate alpha
     alpha = (a * temp_C) / (b + temp_C) + np.log(rh / 100.0)
     
@@ -161,15 +202,16 @@ def dewpoint_temperature(temp: float, rh: float, unit: str ="C") -> float:
         return Td_C
 
 
-def dewpoint_from_avp(avp: float, unit: str ="C") -> float:
+def dewpoint_from_avp(avp: FloatArray, unit: str = "C", method: str = "tetens") -> FloatArray:
     """
     Calculate dew point temperature from actual vapor pressure.
-    
+
     Parameters
     ----------
     avp : Actual vapor pressure (kPa).
     unit: Unit of output temperature: "C", "F", or "K" (default is "C").
-    
+    method : Magnus coefficient set: "tetens" (default) or "alduchov".
+
     Returns
     -------
     Dew point temperature in specified unit
@@ -180,18 +222,29 @@ def dewpoint_from_avp(avp: float, unit: str ="C") -> float:
         If avp is not strictly positive.
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
+
+    Notes
+    -----
+    Inverts the Magnus saturation vapor pressure formula:
+    Td = (C * ln(e / A)) / (B - ln(e / A))
+    with e in kPa and the (A, B, C) coefficients of the chosen method.
 
     Examples
     --------
     >>> print(round(dewpoint_from_avp(2.338), 2))
     20.0
+    >>> print(round(dewpoint_from_avp(2.338, method="alduchov"), 2))
+    20.03
     """
     if np.any(avp <= 0):
         raise OutOfRangeError("Actual vapor pressure must be positive.")
 
-    # Invert the Tetens saturation vapor pressure formula
-    ln_ratio = np.log(avp / 0.61078)
-    Td_C = (237.3 * ln_ratio) / (17.27 - ln_ratio)
+    # Invert the Magnus saturation vapor pressure formula
+    a, b, c = _svp_coefficients(method)
+    ln_ratio = np.log(avp / a)
+    Td_C = (c * ln_ratio) / (b - ln_ratio)
     
     # Convert to desired unit if necessary
     unit = unit.upper()
@@ -202,11 +255,11 @@ def dewpoint_from_avp(avp: float, unit: str ="C") -> float:
 
 
 def potential_temperature(
-    temp: float,
-    pressure: float,
-    reference_pressure: float = P0,
+    temp: FloatArray,
+    pressure: FloatArray,
+    reference_pressure: FloatArray = P0,
     unit: str = "K",
-) -> float:
+) -> FloatArray:
     """
     Calculate potential temperature of dry air.
 
@@ -258,7 +311,7 @@ def potential_temperature(
     return theta
 
 
-def virtual_temperature(temp: float, mixing_ratio: float, unit: str = "K") -> float:
+def virtual_temperature(temp: FloatArray, mixing_ratio: FloatArray, unit: str = "K") -> FloatArray:
     """
     Calculate virtual temperature of moist air.
 
@@ -306,12 +359,12 @@ def virtual_temperature(temp: float, mixing_ratio: float, unit: str = "K") -> fl
 
 
 def lapse_rate(
-    temp_lower: float,
-    temp_upper: float,
-    height_lower: float,
-    height_upper: float,
+    temp_lower: FloatArray,
+    temp_upper: FloatArray,
+    height_lower: FloatArray,
+    height_upper: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Calculate the environmental lapse rate between two heights.
 
@@ -364,8 +417,8 @@ def lapse_rate(
 
 
 def surface_temperature_from_lw(
-    lw_up: float, emissivity: float = 1.0, unit: str = "K"
-) -> float:
+    lw_up: FloatArray, emissivity: FloatArray = 1.0, unit: str = "K"
+) -> FloatArray:
     """
     Retrieve surface temperature from upwelling longwave radiation.
 
@@ -414,7 +467,7 @@ def surface_temperature_from_lw(
     return ts
 
 
-def wet_bulb_temperature(temp: float, rh: float, unit: str = "C") -> float:
+def wet_bulb_temperature(temp: FloatArray, rh: FloatArray, unit: str = "C") -> FloatArray:
     """
     Wet-bulb temperature using Stull's empirical approximation.
 
@@ -471,8 +524,8 @@ def wet_bulb_temperature(temp: float, rh: float, unit: str = "C") -> float:
 
 
 def equivalent_potential_temperature(
-    temp: float, mixing_ratio: float, pressure: float, unit: str = "K"
-) -> float:
+    temp: FloatArray, mixing_ratio: FloatArray, pressure: FloatArray, unit: str = "K"
+) -> FloatArray:
     """
     Approximate equivalent potential temperature of moist air.
 
@@ -522,7 +575,7 @@ def equivalent_potential_temperature(
     return theta_e_T
 
 
-def moist_adiabatic_lapse_rate(temp: float, mixing_ratio: float, unit: str = "C") -> float:
+def moist_adiabatic_lapse_rate(temp: FloatArray, mixing_ratio: FloatArray, unit: str = "C") -> FloatArray:
     """
     Saturated (moist) adiabatic lapse rate.
 

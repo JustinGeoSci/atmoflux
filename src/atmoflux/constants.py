@@ -49,6 +49,26 @@ SVP_A = 0.61078
 SVP_B = 17.27
 SVP_C = 237.3
 
+# Saturation Vapor Pressure constants over ice (Tetens formula)
+# Units: A = kPa, B = dimensionless, C = degrees Celsius
+SVP_ICE_A = 0.61078
+SVP_ICE_B = 21.875
+SVP_ICE_C = 265.5
+
+# Saturation Vapor Pressure constants (Alduchov & Eskridge, 1996)
+# Improved Magnus form over liquid water, recommended for -40 °C to 50 °C
+# Units: A = kPa, B = dimensionless, C = degrees Celsius
+SVP_A_ALDUCHOV = 0.61094
+SVP_B_ALDUCHOV = 17.625
+SVP_C_ALDUCHOV = 243.04
+
+# Saturation Vapor Pressure constants over ice (Alduchov & Eskridge, 1996)
+# Improved Magnus form over a plane ice surface, recommended for -80 °C to 0 °C
+# Units: A = kPa, B = dimensionless, C = degrees Celsius
+SVP_ICE_A_ALDUCHOV = 0.61121
+SVP_ICE_B_ALDUCHOV = 22.587
+SVP_ICE_C_ALDUCHOV = 273.86
+
 '''
 Radiative Constants
 Parameters governing shortwave and longwave radiative transfer.

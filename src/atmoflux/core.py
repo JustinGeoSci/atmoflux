@@ -12,9 +12,14 @@ from __future__ import annotations
 
 # Standard imports
 from dataclasses import dataclass
+from typing import TypeAlias
 
 # Outside imports
 import numpy as np
+
+# Numeric inputs and outputs accept Python scalars or NumPy arrays.
+FloatArray: TypeAlias = float | np.ndarray
+IntArray: TypeAlias = int | np.ndarray
 
 
 @dataclass
@@ -40,17 +45,17 @@ class EnergyBalance:
 
     Attributes
     ----------
-    net_radiation : float or numpy.ndarray
+    net_radiation : FloatArray or numpy.ndarray
         Net all-wave radiation, Rn (W/m²).
-    sensible_heat : float or numpy.ndarray
+    sensible_heat : FloatArray or numpy.ndarray
         Sensible heat flux, H (W/m²).
-    latent_heat : float or numpy.ndarray
+    latent_heat : FloatArray or numpy.ndarray
         Latent heat flux, LE (W/m²).
-    ground_heat : float or numpy.ndarray
+    ground_heat : FloatArray or numpy.ndarray
         Ground heat flux, G (W/m²).
-    residual : float or numpy.ndarray
+    residual : FloatArray or numpy.ndarray
         Budget closure residual, Rn - G - H - LE (W/m²).
-    bowen_ratio : float or numpy.ndarray
+    bowen_ratio : FloatArray or numpy.ndarray
         Bowen ratio, H / LE (dimensionless); ``inf`` or ``nan`` where LE is 0.
 
     Examples
@@ -65,10 +70,10 @@ class EnergyBalance:
     EnergyBalance(Rn=400.0, H=150.0, LE=200.0, G=50.0, residual=0.0)
     """
 
-    net_radiation: float | np.ndarray
-    sensible_heat: float | np.ndarray
-    latent_heat: float | np.ndarray
-    ground_heat: float | np.ndarray = 0.0
+    net_radiation: FloatArray | np.ndarray
+    sensible_heat: FloatArray | np.ndarray
+    latent_heat: FloatArray | np.ndarray
+    ground_heat: FloatArray | np.ndarray = 0.0
 
     def __post_init__(self) -> None:
         """Compute the budget residual and Bowen ratio from the stored fluxes."""
@@ -87,7 +92,7 @@ class EnergyBalance:
     def __repr__(self) -> str:
         """Compact representation that summarizes arrays by shape and mean."""
 
-        def fmt(value: float | np.ndarray) -> str:
+        def fmt(value: FloatArray | np.ndarray) -> str:
             arr = np.asarray(value, dtype=float)
             if arr.ndim == 0:
                 return f"{float(arr):.1f}"
@@ -143,13 +148,13 @@ class AtmosphericState:
 
     Attributes
     ----------
-    temperature : float or numpy.ndarray
+    temperature : FloatArray or numpy.ndarray
         Air temperature (°C).
-    pressure : float or numpy.ndarray
+    pressure : FloatArray or numpy.ndarray
         Air pressure (kPa).
-    wind_speed : float or numpy.ndarray
+    wind_speed : FloatArray or numpy.ndarray
         Wind speed (m/s).
-    relative_humidity : float, numpy.ndarray, or None
+    relative_humidity : FloatArray, numpy.ndarray, or None
         Relative humidity (%), or None if not supplied.
 
     Examples
@@ -162,15 +167,15 @@ class AtmosphericState:
     AtmosphericState(T=20.0°C, P=101.3kPa, U=3.0m/s, RH=55.0%)
     """
 
-    temperature: float | np.ndarray
-    pressure: float | np.ndarray
-    wind_speed: float | np.ndarray
-    relative_humidity: float | np.ndarray | None = None
+    temperature: FloatArray | np.ndarray
+    pressure: FloatArray | np.ndarray
+    wind_speed: FloatArray | np.ndarray
+    relative_humidity: FloatArray | np.ndarray | None = None
 
     def __repr__(self) -> str:
         """Compact representation summarizing arrays by shape and mean."""
 
-        def fmt(value: float | np.ndarray) -> str:
+        def fmt(value: FloatArray | np.ndarray) -> str:
             arr = np.asarray(value, dtype=float)
             if arr.ndim == 0:
                 return f"{float(arr):.1f}"

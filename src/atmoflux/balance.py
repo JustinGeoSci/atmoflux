@@ -13,16 +13,16 @@ from __future__ import annotations
 import numpy as np
 
 # imports from within atmoflux
-from .core import EnergyBalance
+from .core import EnergyBalance, FloatArray
 from .exceptions import OutOfRangeError
 
 
 def surface_energy_residual(
-        net_radiation: float, 
-        sensible_heat: float, 
-        latent_heat: float, 
-        ground_heat: float = 0.0,
-) -> float:
+        net_radiation: FloatArray, 
+        sensible_heat: FloatArray, 
+        latent_heat: FloatArray, 
+        ground_heat: FloatArray = 0.0,
+) -> FloatArray:
     """
     Surface energy balance closure residual.
 
@@ -53,7 +53,7 @@ def surface_energy_residual(
     return residual
 
 
-def bowen_ratio(sensible_heat: float, latent_heat: float) -> float:
+def bowen_ratio(sensible_heat: FloatArray, latent_heat: FloatArray) -> FloatArray:
     """
     Bowen ratio of sensible to latent heat flux.
 
@@ -87,10 +87,10 @@ def bowen_ratio(sensible_heat: float, latent_heat: float) -> float:
 
 
 def energy_balance(
-    net_radiation: float,
-    sensible_heat: float,
-    latent_heat: float,
-    ground_heat: float = 0.0,
+    net_radiation: FloatArray,
+    sensible_heat: FloatArray,
+    latent_heat: FloatArray,
+    ground_heat: FloatArray = 0.0,
 ) -> EnergyBalance:
     """
     Assemble an EnergyBalance container from surface flux components.
@@ -123,7 +123,7 @@ def energy_balance(
     )
 
 
-def available_energy(net_radiation: float, ground_heat: float = 0.0) -> float:
+def available_energy(net_radiation: FloatArray, ground_heat: FloatArray = 0.0) -> FloatArray:
     """
     Available energy at the surface.
 
@@ -154,11 +154,11 @@ def available_energy(net_radiation: float, ground_heat: float = 0.0) -> float:
 
 
 def energy_balance_ratio(
-    sensible_heat: float,
-    latent_heat: float,
-    net_radiation: float,
-    ground_heat: float = 0.0,
-) -> float:
+    sensible_heat: FloatArray,
+    latent_heat: FloatArray,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray = 0.0,
+) -> FloatArray:
     """
     Energy balance closure ratio.
 
@@ -198,7 +198,7 @@ def energy_balance_ratio(
     return ebr
 
 
-def ground_heat_fraction(net_radiation: float, fraction: float = 0.1) -> float:
+def ground_heat_fraction(net_radiation: FloatArray, fraction: FloatArray = 0.1) -> FloatArray:
     """
     Estimate ground heat flux as a fraction of net radiation.
 

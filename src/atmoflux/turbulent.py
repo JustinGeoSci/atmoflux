@@ -2,8 +2,9 @@
 atmoflux.turbulent
 =================
 Calculates turbulent fluxes driven by wind and surface-air gradients.
-Includes moist air density, bulk-aerodynamic sensible and latent heat fluxes, and
-neutral bulk transfer coefficients.
+Includes dry and moist air density, bulk-aerodynamic sensible and latent heat
+fluxes, neutral bulk transfer coefficients, surface shear stress, and
+aerodynamic resistance.
 
 """
 
@@ -14,11 +15,12 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import CP_AIR, LV, R_AIR, KARMAN
+from .core import FloatArray
 from .exceptions import OutOfRangeError
-from .temperature import convert_temperature
+from .temperature import convert_temperature, virtual_temperature
 
 
-def air_density(temp: float, pressure: float, unit: str = "C") -> float:
+def air_density(temp: FloatArray, pressure: FloatArray, unit: str = "C") -> FloatArray:
     """
     Density of dry air from temperature and pressure (ideal gas law).
 
@@ -61,13 +63,13 @@ def air_density(temp: float, pressure: float, unit: str = "C") -> float:
 
 
 def sensible_heat_flux(
-    density: float,
-    wind_speed: float,
-    temp_air: float,
-    temp_surface: float,
-    transfer_coeff: float,
+    density: FloatArray,
+    wind_speed: FloatArray,
+    temp_air: FloatArray,
+    temp_surface: FloatArray,
+    transfer_coeff: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Bulk-aerodynamic sensible heat flux.
 
@@ -109,12 +111,12 @@ def sensible_heat_flux(
 
 
 def latent_heat_flux(
-    density: float,
-    wind_speed: float,
-    q_air: float,
-    q_surface: float,
-    transfer_coeff: float,
-) -> float:
+    density: FloatArray,
+    wind_speed: FloatArray,
+    q_air: FloatArray,
+    q_surface: FloatArray,
+    transfer_coeff: FloatArray,
+) -> FloatArray:
     """
     Bulk-aerodynamic latent heat flux.
 
@@ -146,8 +148,8 @@ def latent_heat_flux(
 
 
 def bulk_transfer_coefficient(
-    height: float, roughness: float, displacement: float = 0.0, karman: float = KARMAN
-) -> float:
+    height: FloatArray, roughness: FloatArray, displacement: FloatArray = 0.0, karman: FloatArray = KARMAN
+) -> FloatArray:
     """
     Neutral bulk transfer coefficient from surface-layer geometry.
 
@@ -187,7 +189,7 @@ def bulk_transfer_coefficient(
     return c
 
 
-def surface_shear_stress(density: float, friction_velocity: float) -> float:
+def surface_shear_stress(density: FloatArray, friction_velocity: FloatArray) -> FloatArray:
     """
     Surface shear stress (momentum flux) from friction velocity.
 
@@ -225,12 +227,12 @@ def surface_shear_stress(density: float, friction_velocity: float) -> float:
 
 
 def aerodynamic_resistance(
-    wind_speed: float,
-    height: float,
-    roughness: float,
-    displacement: float = 0.0,
-    karman: float = KARMAN,
-) -> float:
+    wind_speed: FloatArray,
+    height: FloatArray,
+    roughness: FloatArray,
+    displacement: FloatArray = 0.0,
+    karman: FloatArray = KARMAN,
+) -> FloatArray:
     """
     Neutral aerodynamic resistance to turbulent transfer.
 
@@ -276,3 +278,55 @@ def aerodynamic_resistance(
     ra = np.log((height - displacement) / roughness) ** 2 / (karman**2 * wind_speed)
 
     return ra
+
+
+def moist_air_density(
+    temp: FloatArray, pressure: FloatArray, mixing_ratio: FloatArray, unit: str = "C"
+) -> FloatArray:
+    """
+    Density of moist air from temperature, pressure, and mixing ratio.
+
+    Moist air is less dense than dry air at the same temperature and pressure
+    because water vapor is lighter than dry air. The effect is captured through
+    the virtual temperature, so the dry-air gas constant applies.
+
+    Parameters
+    ----------
+    temp : Air temperature.
+    pressure : Total air pressure (kPa), must be positive.
+    mixing_ratio : Water vapor mixing ratio (kg/kg), non-negative.
+    unit : Unit of temp: "C", "F", or "K" (default "C").
+
+    Returns
+    -------
+    Moist air density in kg/m³.
+
+    Raises
+    ------
+    OutOfRangeError
+        If pressure is not positive or mixing_ratio is negative.
+    InvalidUnitError
+        If unit is invalid.
+
+    Notes
+    -----
+    Ideal gas law with virtual temperature:
+    rho = P / (R_air * Tv)
+    with P in pascals, R_air the dry-air gas constant, and Tv = T * (1 + 0.61 * w)
+    the virtual temperature in kelvin. With mixing_ratio = 0 this reduces to
+    air_density.
+
+    Examples
+    --------
+    >>> print(round(moist_air_density(15, 101.325, 0.01), 4))
+    1.2176
+    """
+    if np.any(pressure <= 0):
+        raise OutOfRangeError("Pressure must be positive.")
+
+    temp_K = convert_temperature(temp, unit.upper(), "K")
+    tv_K = virtual_temperature(temp_K, mixing_ratio, unit="K")
+    p_pa = pressure * 1000.0  # kPa -> Pa
+    rho = p_pa / (R_AIR * tv_K)
+
+    return rho

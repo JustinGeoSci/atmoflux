@@ -3,8 +3,9 @@ atmoflux.hydro
 =================
 Calculates water fluxes within the hydrological cycle. 
 Includes conversion of latent heat flux to evaporation depth, open-water Penman
-evaporation, the general Penman-Monteith equation, and FAO-56 reference
-evapotranspiration.
+evaporation, the general Penman-Monteith equation, FAO-56 reference
+evapotranspiration, equilibrium and Priestley-Taylor evaporation, Hargreaves
+reference evapotranspiration, and Dalton mass-transfer evaporation.
 
 """
 
@@ -15,6 +16,7 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import CP_AIR, LV, RMW, RHO_WATER, P0, PRIESTLEY_TAYLOR_ALPHA
+from .core import FloatArray
 from .exceptions import OutOfRangeError
 from .humidity import saturation_vp_slope
 from .temperature import convert_temperature
@@ -24,8 +26,8 @@ _SECONDS_PER_DAY = 86400.0
 
 
 def latent_heat_to_evaporation(
-    latent_heat: float, density_water: float = RHO_WATER
-) -> float:
+    latent_heat: FloatArray, density_water: FloatArray = RHO_WATER
+) -> FloatArray:
     """
     Convert latent heat flux to an equivalent evaporation depth.
 
@@ -62,7 +64,7 @@ def latent_heat_to_evaporation(
     return e
 
 
-def _psychrometric_constant(pressure: float) -> float:
+def _psychrometric_constant(pressure: FloatArray) -> FloatArray:
     """
     Psychrometric constant (kPa/°C) at a given pressure (kPa).
     For more precise calculation when pressure is known.
@@ -73,15 +75,16 @@ def _psychrometric_constant(pressure: float) -> float:
 
 
 def penman_evaporation(
-    net_radiation: float,
-    ground_heat: float,
-    temp: float,
-    wind_2m: float,
-    es: float,
-    ea: float,
-    pressure: float = P0,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray,
+    temp: FloatArray,
+    wind_2m: FloatArray,
+    es: FloatArray,
+    ea: FloatArray,
+    pressure: FloatArray = P0,
     unit: str = "C",
-) -> float:
+    method: str = "tetens",
+) -> FloatArray:
     """
     Open-water evaporation using the Penman combination equation.
 
@@ -98,6 +101,8 @@ def penman_evaporation(
     ea : Actual vapor pressure (kPa).
     pressure : Atmospheric pressure (kPa), default sea-level P0.
     unit : Unit of temp: "C", "F", or "K" (default "C").
+    method : Saturation vapor pressure formula for the slope term: "tetens"
+        (default) or "alduchov".
 
     Returns
     -------
@@ -109,6 +114,8 @@ def penman_evaporation(
         If wind_2m is negative.
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
 
     Notes
     -----
@@ -127,7 +134,7 @@ def penman_evaporation(
         raise OutOfRangeError("Wind speed must be non-negative.")
 
     temp_C = convert_temperature(temp, unit.upper(), "C")
-    delta = saturation_vp_slope(temp_C, "C")
+    delta = saturation_vp_slope(temp_C, "C", method)
     gamma = _psychrometric_constant(pressure)
     lam = LV / 1.0e6  # latent heat in MJ/kg
 
@@ -139,16 +146,17 @@ def penman_evaporation(
 
 
 def penman_monteith(
-    net_radiation: float,
-    ground_heat: float,
-    temp: float,
-    vpd: float,
-    density: float,
-    resistance_aero: float,
-    resistance_surface: float,
-    pressure: float = P0,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray,
+    temp: FloatArray,
+    vpd: FloatArray,
+    density: FloatArray,
+    resistance_aero: FloatArray,
+    resistance_surface: FloatArray,
+    pressure: FloatArray = P0,
     unit: str = "C",
-) -> float:
+    method: str = "tetens",
+) -> FloatArray:
     """
     Evaporation from the general Penman-Monteith equation.
 
@@ -166,6 +174,8 @@ def penman_monteith(
     resistance_surface : Surface/canopy resistance rs (s/m), must be non-negative.
     pressure : Atmospheric pressure (kPa), default sea-level P0.
     unit : Unit of temp: "C", "F", or "K" (default "C").
+    method : Saturation vapor pressure formula for the slope term: "tetens"
+        (default) or "alduchov".
 
     Returns
     -------
@@ -178,6 +188,8 @@ def penman_monteith(
         resistance_surface is negative.
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
 
     Notes
     -----
@@ -199,7 +211,7 @@ def penman_monteith(
         raise OutOfRangeError("Surface resistance must be non-negative.")
 
     temp_C = convert_temperature(temp, unit.upper(), "C")
-    delta = saturation_vp_slope(temp_C, "C") * 1000.0  # kPa/K -> Pa/K
+    delta = saturation_vp_slope(temp_C, "C", method) * 1000.0  # kPa/K -> Pa/K
     gamma = _psychrometric_constant(pressure) * 1000.0  # kPa/K -> Pa/K
     vpd_pa = vpd * 1000.0  # kPa -> Pa
     available = net_radiation - ground_heat
@@ -213,15 +225,15 @@ def penman_monteith(
 
 
 def potential_evapotranspiration(
-    net_radiation: float,
-    ground_heat: float,
-    temp: float,
-    wind_2m: float,
-    es: float,
-    ea: float,
-    pressure: float = P0,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray,
+    temp: FloatArray,
+    wind_2m: FloatArray,
+    es: FloatArray,
+    ea: FloatArray,
+    pressure: FloatArray = P0,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Reference evapotranspiration from the FAO-56 Penman-Monteith equation.
 
@@ -278,12 +290,13 @@ def potential_evapotranspiration(
 
 
 def equilibrium_evaporation(
-    net_radiation: float,
-    ground_heat: float,
-    temp: float,
-    pressure: float = P0,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray,
+    temp: FloatArray,
+    pressure: FloatArray = P0,
     unit: str = "C",
-) -> float:
+    method: str = "tetens",
+) -> FloatArray:
     """
     Equilibrium evaporation from available energy.
 
@@ -298,6 +311,8 @@ def equilibrium_evaporation(
     temp : Mean air temperature.
     pressure : Atmospheric pressure (kPa), default sea-level P0.
     unit : Unit of temp: "C", "F", or "K" (default "C").
+    method : Saturation vapor pressure formula for the slope term: "tetens"
+        (default) or "alduchov".
 
     Returns
     -------
@@ -307,6 +322,8 @@ def equilibrium_evaporation(
     ------
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
 
     Notes
     -----
@@ -320,7 +337,7 @@ def equilibrium_evaporation(
     4.521
     """
     temp_C = convert_temperature(temp, unit.upper(), "C")
-    delta = saturation_vp_slope(temp_C, "C")
+    delta = saturation_vp_slope(temp_C, "C", method)
     gamma = _psychrometric_constant(pressure)
     lam = LV / 1.0e6  # latent heat in MJ/kg
     E_eq = (delta / (delta + gamma)) * (net_radiation - ground_heat) / lam
@@ -329,13 +346,14 @@ def equilibrium_evaporation(
 
 
 def priestley_taylor(
-    net_radiation: float,
-    ground_heat: float,
-    temp: float,
-    alpha: float = PRIESTLEY_TAYLOR_ALPHA,
-    pressure: float = P0,
+    net_radiation: FloatArray,
+    ground_heat: FloatArray,
+    temp: FloatArray,
+    alpha: FloatArray = PRIESTLEY_TAYLOR_ALPHA,
+    pressure: FloatArray = P0,
     unit: str = "C",
-) -> float:
+    method: str = "tetens",
+) -> FloatArray:
     """
     Priestley-Taylor evaporation.
 
@@ -350,6 +368,8 @@ def priestley_taylor(
     alpha : Priestley-Taylor coefficient (default from constants, ~1.26).
     pressure : Atmospheric pressure (kPa), default sea-level P0.
     unit : Unit of temp: "C", "F", or "K" (default "C").
+    method : Saturation vapor pressure formula for the slope term: "tetens"
+        (default) or "alduchov".
 
     Returns
     -------
@@ -361,6 +381,8 @@ def priestley_taylor(
         If alpha is not positive.
     InvalidUnitError
         If unit is invalid.
+    ValidationError
+        If method is not "tetens" or "alduchov".
 
     Notes
     -----
@@ -375,19 +397,21 @@ def priestley_taylor(
     if np.any(alpha <= 0):
         raise OutOfRangeError("Priestley-Taylor coefficient must be positive.")
     
-    E_eq = equilibrium_evaporation(net_radiation, ground_heat, temp, pressure, unit)
+    E_eq = equilibrium_evaporation(
+        net_radiation, ground_heat, temp, pressure, unit, method
+    )
     E_pt = alpha * E_eq
 
     return E_pt
 
 
 def hargreaves(
-    temp_mean: float,
-    temp_min: float,
-    temp_max: float,
-    extraterrestrial: float,
+    temp_mean: FloatArray,
+    temp_min: FloatArray,
+    temp_max: FloatArray,
+    extraterrestrial: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Hargreaves reference evapotranspiration.
 
@@ -442,3 +466,47 @@ def hargreaves(
     )
 
     return et0
+
+
+def dalton_evaporation(vpd: FloatArray, transfer_coeff: FloatArray) -> FloatArray:
+    """
+    Mass-transfer (Dalton-type) evaporation from the vapor pressure deficit.
+
+    The simplest aerodynamic evaporation model: evaporation is proportional to
+    the drying power of the air, expressed as the vapor pressure deficit, with
+    an empirical transfer coefficient that lumps together wind and surface
+    effects.
+
+    Parameters
+    ----------
+    vpd : Vapor pressure deficit (kPa). Negative values (supersaturation) give
+        negative evaporation, i.e. condensation.
+    transfer_coeff : Empirical transfer coefficient K (mm/day/kPa), non-negative.
+
+    Returns
+    -------
+    Evaporation rate in mm/day; negative values indicate condensation.
+
+    Raises
+    ------
+    OutOfRangeError
+        If transfer_coeff is negative.
+
+    Notes
+    -----
+    Dalton's law:
+    E = K * VPD
+    K is site- and wind-dependent and must be calibrated or taken from the
+    literature; it often takes the form K = a + b * u for wind speed u.
+
+    Examples
+    --------
+    >>> print(round(dalton_evaporation(1.2671, 3.0), 3))
+    3.801
+    """
+    if np.any(transfer_coeff < 0):
+        raise OutOfRangeError("Transfer coefficient must be non-negative.")
+
+    e = transfer_coeff * vpd
+
+    return e

@@ -3,7 +3,7 @@ name = "atmoflux"
 dynamic = ["version"]
 description = "Atmospheric and energy flux analysis library"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = ["numpy>=1.26"]
 authors = [{ name = "JustinGeoSci", email = "contact@justingeosci.dev" }]
 license = "MIT"

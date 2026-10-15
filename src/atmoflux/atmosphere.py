@@ -15,12 +15,12 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import G, R_AIR, P0, T0_STANDARD, LAPSE_RATE_STANDARD
-
+from .core import FloatArray
 from .exceptions import OutOfRangeError
 from .temperature import convert_temperature
 
 
-def scale_height(temp: float, unit: str = "C") -> float:
+def scale_height(temp: FloatArray, unit: str = "C") -> FloatArray:
     """
     Atmospheric pressure scale height for an isothermal layer.
 
@@ -59,11 +59,11 @@ def scale_height(temp: float, unit: str = "C") -> float:
 
 
 def pressure_at_altitude(
-    altitude: float,
-    pressure_ref: float = P0,
-    temp: float = 15.0,
+    altitude: FloatArray,
+    pressure_ref: FloatArray = P0,
+    temp: FloatArray = 15.0,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Pressure at a given altitude using the isothermal barometric formula.
 
@@ -107,11 +107,11 @@ def pressure_at_altitude(
 
 
 def hypsometric_thickness(
-    pressure_lower: float,
-    pressure_upper: float,
-    temp: float,
+    pressure_lower: FloatArray,
+    pressure_upper: FloatArray,
+    temp: FloatArray,
     unit: str = "C",
-) -> float:
+) -> FloatArray:
     """
     Geopotential thickness between two pressure levels (hypsometric equation).
 
@@ -155,13 +155,14 @@ def hypsometric_thickness(
     return dz
 
 
-def density_altitude(pressure: float, temp: float, unit: str = "C") -> float:
+def density_altitude(pressure: FloatArray, temp: FloatArray, unit: str = "C") -> FloatArray:
     """
     Density altitude from station pressure and temperature.
 
     Density altitude is the altitude in the standard atmosphere at which the air
     density equals the observed density. It is widely used in aviation and
-    performance calculations.
+    performance calculations. It can also support atmospheric characterization and 
+    environmental modeling involving air density and surface energy exchange.
 
     Parameters
     ----------
@@ -204,7 +205,7 @@ def density_altitude(pressure: float, temp: float, unit: str = "C") -> float:
     return da
 
 
-def standard_atmosphere(altitude: float, unit: str = "C") -> tuple:
+def standard_atmosphere(altitude: FloatArray, unit: str = "C") -> tuple[FloatArray, FloatArray]:
     """
     Temperature and pressure of the US Standard Atmosphere (troposphere).
 

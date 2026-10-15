@@ -2,7 +2,8 @@
 atmoflux.aerosols
 =================
 Handles fluxes of particles and trace gases in the atmosphere that are not water. 
-Includes deposition, emission, and transport calculations for aerosols.
+Includes deposition, emission, and transport calculations for aerosols, and the
+particle Reynolds number for checking Stokes-regime validity.
 
 """
 
@@ -13,15 +14,16 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import G, MU_AIR, MFP_AIR, RHO_AIR_STD
+from .core import FloatArray
 from .exceptions import OutOfRangeError
 
 
 def settling_velocity(
-    diameter: float,
-    particle_density: float,
-    viscosity: float = MU_AIR,
-    mean_free_path: float = MFP_AIR,
-) -> float:
+    diameter: FloatArray,
+    particle_density: FloatArray,
+    viscosity: FloatArray = MU_AIR,
+    mean_free_path: FloatArray = MFP_AIR,
+) -> FloatArray:
     """
     Gravitational settling velocity of a spherical aerosol particle.
 
@@ -76,8 +78,8 @@ def settling_velocity(
 
 
 def dry_deposition_velocity(
-    settling: float, resistance_aero: float, resistance_surface: float
-) -> float:
+    settling: FloatArray, resistance_aero: FloatArray, resistance_surface: FloatArray
+) -> FloatArray:
     """
     Dry deposition velocity from the resistance-in-series model.
 
@@ -121,7 +123,7 @@ def dry_deposition_velocity(
     return vd
 
 
-def emission_flux(concentration: float, transfer_velocity: float) -> float:
+def emission_flux(concentration: FloatArray, transfer_velocity: FloatArray) -> FloatArray:
     """
     Surface emission flux from a transfer velocity and concentration.
 
@@ -154,3 +156,62 @@ def emission_flux(concentration: float, transfer_velocity: float) -> float:
     f = transfer_velocity * concentration
 
     return f
+
+
+def particle_reynolds_number(
+    diameter: FloatArray,
+    velocity: FloatArray,
+    density: FloatArray = RHO_AIR_STD,
+    viscosity: FloatArray = MU_AIR,
+) -> FloatArray:
+    """
+    Particle Reynolds number for a particle moving relative to air.
+
+    The ratio of inertial to viscous forces on the particle. Its main use here
+    is checking that settling_velocity is valid: Stokes' law assumes creeping
+    flow, which holds for particle Reynolds numbers below roughly 1.
+
+    Parameters
+    ----------
+    diameter : Particle diameter (m), must be positive.
+    velocity : Particle speed relative to the air (m/s), non-negative; e.g. the
+        settling velocity.
+    density : Air density (kg/m³), default RHO_AIR_STD (standard sea level).
+    viscosity : Dynamic viscosity of air (Pa·s), default from constants.
+
+    Returns
+    -------
+    Particle Reynolds number (dimensionless).
+
+    Raises
+    ------
+    OutOfRangeError
+        If diameter, density, or viscosity is not positive, or velocity is
+        negative.
+
+    Notes
+    -----
+    Re = rho * U * d / mu
+    written in the dynamic-viscosity form so that MU_AIR remains the single
+    source of truth for air viscosity. Stokes' law (and settling_velocity) is
+    accurate for Re < ~1; above that, drag exceeds the Stokes estimate and the
+    computed settling velocity is too high.
+
+    Examples
+    --------
+    >>> vs = settling_velocity(10e-6, 1000.0)
+    >>> print(round(particle_reynolds_number(10e-6, vs), 5))
+    0.00212
+    """
+    if np.any(diameter <= 0):
+        raise OutOfRangeError("Particle diameter must be positive.")
+    if np.any(velocity < 0):
+        raise OutOfRangeError("Velocity must be non-negative.")
+    if np.any(density <= 0):
+        raise OutOfRangeError("Air density must be positive.")
+    if np.any(viscosity <= 0):
+        raise OutOfRangeError("Viscosity must be positive.")
+
+    re = density * velocity * diameter / viscosity
+
+    return re

@@ -14,6 +14,7 @@ import numpy as np
 
 # imports from within atmoflux
 from .constants import KARMAN, RHO_AIR_STD
+from .core import FloatArray
 from .exceptions import InvalidUnitError, OutOfRangeError
 
 # Conversion factors to meters per second.
@@ -25,7 +26,7 @@ _WIND_TO_MS = {
 }
 
 
-def convert_wind_speed(speed: float, from_unit: str, to_unit: str) -> float:
+def convert_wind_speed(speed: FloatArray, from_unit: str, to_unit: str) -> FloatArray:
     """
     Convert wind speed between m/s, mph, km/h, and knots.
 
@@ -70,7 +71,7 @@ def convert_wind_speed(speed: float, from_unit: str, to_unit: str) -> float:
     return ws
 
 
-def wind_speed(u: float, v: float) -> float:
+def wind_speed(u: FloatArray, v: FloatArray) -> FloatArray:
     """
     Wind speed magnitude from zonal and meridional components.
 
@@ -93,7 +94,7 @@ def wind_speed(u: float, v: float) -> float:
     return ws
 
 
-def wind_direction(u: float, v: float) -> float:
+def wind_direction(u: FloatArray, v: FloatArray) -> FloatArray:
     """
     Meteorological wind direction from zonal and meridional components.
 
@@ -127,12 +128,12 @@ def wind_direction(u: float, v: float) -> float:
 
 
 def log_wind_profile(
-    speed_ref: float,
-    height_ref: float,
-    height: float,
-    roughness: float,
-    displacement: float = 0.0,
-) -> float:
+    speed_ref: FloatArray,
+    height_ref: FloatArray,
+    height: FloatArray,
+    roughness: FloatArray,
+    displacement: FloatArray = 0.0,
+) -> FloatArray:
     """
     Adjust wind speed to a new height using the logarithmic wind profile.
 
@@ -167,8 +168,6 @@ def log_wind_profile(
     >>> print(round(log_wind_profile(5.0, 10.0, 2.0, 0.03), 3))
     3.615
     """
-    if np.any(np.log((height_ref - displacement) / roughness) <= 0):
-        raise OutOfRangeError("Invalid reference height for log law.")
     if np.any(roughness <= 0):
         raise OutOfRangeError("Roughness length must be positive.")
     if np.any((height - displacement) <= roughness) or np.any(
@@ -184,8 +183,8 @@ def log_wind_profile(
 
 
 def power_law_profile(
-    speed_ref: float, height_ref: float, height: float, exponent: float
-) -> float:
+    speed_ref: FloatArray, height_ref: FloatArray, height: FloatArray, exponent: FloatArray
+) -> FloatArray:
     """
     Adjust wind speed to a new height using the power-law wind profile.
 
@@ -224,12 +223,12 @@ def power_law_profile(
 
 
 def friction_velocity(
-    speed: float,
-    height: float,
-    roughness: float,
-    displacement: float = 0.0,
-    karman: float = KARMAN,
-) -> float:
+    speed: FloatArray,
+    height: FloatArray,
+    roughness: FloatArray,
+    displacement: FloatArray = 0.0,
+    karman: FloatArray = KARMAN,
+) -> FloatArray:
     """
     Friction velocity from a single wind measurement (neutral stability).
 
@@ -275,8 +274,8 @@ def friction_velocity(
 
 
 def wind_shear(
-    speed_lower: float, speed_upper: float, height_lower: float, height_upper: float
-) -> float:
+    speed_lower: FloatArray, speed_upper: FloatArray, height_lower: FloatArray, height_upper: FloatArray
+) -> FloatArray:
     """
     Vertical wind shear between two heights.
 
@@ -315,7 +314,7 @@ def wind_shear(
     return shear
 
 
-def wind_components(speed: float, direction: float) -> tuple:
+def wind_components(speed: FloatArray, direction: FloatArray) -> tuple[FloatArray, FloatArray]:
     """
     Zonal and meridional wind components from speed and meteorological direction.
 
@@ -360,7 +359,7 @@ def wind_components(speed: float, direction: float) -> tuple:
     return u, v
 
 
-def wind_power_density(speed: float, density: float = RHO_AIR_STD) -> float:
+def wind_power_density(speed: FloatArray, density: FloatArray = RHO_AIR_STD) -> FloatArray:
     """
     Wind power density of the airflow.
 
@@ -400,7 +399,7 @@ def wind_power_density(speed: float, density: float = RHO_AIR_STD) -> float:
     return p
 
 
-def roughness_from_canopy(canopy_height: float) -> float:
+def roughness_from_canopy(canopy_height: FloatArray) -> FloatArray:
     """
     Estimate aerodynamic roughness length from vegetation canopy height.
 
@@ -435,7 +434,7 @@ def roughness_from_canopy(canopy_height: float) -> float:
     return z0
 
 
-def displacement_from_canopy(canopy_height: float) -> float:
+def displacement_from_canopy(canopy_height: FloatArray) -> FloatArray:
     """
     Estimate zero-plane displacement height from vegetation canopy height.
 
