@@ -13,8 +13,7 @@ authors:
     orcid: https://orcid.org/0009-0006-5545-0158
 version: 1.2.0
 date-released: 2026-10-15
-license:
-  - MIT
+license: MIT
 repository-code: "https://github.com/JustinGeoSci/atmoflux"
 url: "https://justingeosci.dev/atmoflux/"
 keywords:
@@ -24,12 +23,13 @@ keywords:
  - surface energy balance
  - energy fluxes
  - radiative fluxes
- - turbluent fluxes
+ - turbulent fluxes
  - hydrological fluxes
 
 identifiers:
   - type: doi
     value: 10.5281/zenodo.20470203
+    description: "The concept DOI, which always resolves to the latest version."
 
 preferred-citation:
   type: software
